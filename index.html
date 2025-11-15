@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daara Bordeaux — Quiz Fiqh</title>
+  <style>
+    :root{
+      --pri:#5b6ee1; --pri2:#7a4aa6;
+      --bg:linear-gradient(135deg,var(--pri) 0%, var(--pri2) 100%);
+      --card:linear-gradient(135deg,#f6f8fb 0%, #cbd6ea 100%);
+      --r:26px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--bg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      color:#111;
+      padding:20px;
+    }
+    .app{
+      width:100%;
+      max-width:1100px;
+      background:rgba(255,255,255,.96);
+      border-radius:var(--r);
+      box-shadow:0 20px 60px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    header{
+      padding:18px 22px;
+      border-bottom:1px solid rgba(0,0,0,.06);
+    }
+    .header-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .title{
+      font-weight:800;
+      color:var(--pri);
+      font-size:clamp(20px,3vw,32px);
+    }
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+    .btn{
+      border:0;
+      border-radius:999px;
+      padding:8px 14px;
+      background:linear-gradient(135deg,#eef0ff,#ece7ff);
+      cursor:pointer;
+      font-weight:600;
+      box-shadow:0 6px 14px rgba(0,0,0,.08);
+      font-size:13px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn.primary{
+      background:linear-gradient(135deg,var(--pri),var(--pri2));
+      color:#fff;
+      box-shadow:0 10px 22px rgba(91,110,225,.45);
+    }
+    .btn.small{
+      padding:6px 10px;
+      font-size:12px;
+    }
+    .btn[disabled]{
+      opacity:.6;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:.35rem;
+      background:#fff;
+      border-radius:999px;
+      padding:6px 10px;
+      color:var(--pri);
+      font-weight:700;
+      font-size:12px;
+    }
+    .mode-indicator{
+      font-size:12px;
+      font-weight:600;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#fff;
+      color:#444;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .mode-edit{
+      color:#b65b00;
+      background:#ffe9cf;
+    }
+    main{
+      padding:18px 22px 22px;
+    }
+    .player-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      margin-bottom:10px;
+      font-size:13px;
+    }
+    .player-row input{
+      border-radius:999px;
+      border:1px solid #ccd2f5;
+      padding:6px 10px;
+      font-size:13px;
+      min-width:160px;
+      flex:1 1 140px;
+    }
+    .player-label{
+      font-weight:600;
+      color:#333;
+    }
+    .score-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      background:#fff;
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:12px;
+      font-weight:700;
+      color:#1b5e20;
+      border:1px solid #b6e1b9;
+    }
+    .time-config{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:6px;
+      margin-bottom:6px;
+      font-size:12px;
+    }
+    .time-config-label{
+      font-weight:600;
+      color:#333;
+    }
+    .time-btn{
+      border-radius:999px;
+      border:1px solid #ccd2f5;
+      background:#fff;
+      padding:4px 8px;
+      font-size:11px;
+      cursor:pointer;
+    }
+    .time-btn.active{
+      background:var(--pri);
+      color:#fff;
+      border-color:var(--pri);
+    }
+    .top-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:6px;
+      font-size:13px;
+      flex-wrap:wrap;
+    }
+    .timer-label{
+      font-weight:600;
+      color:#333;
+    }
+    .timer-value{
+      font-weight:800;
+      min-width:80px;
+      text-align:right;
+    }
+    .progress{
+      height:8px;
+      background:#e7e7e7;
+      border-radius:999px;
+      overflow:hidden;
+      margin-bottom:14px;
+    }
+    .progress .fill{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,var(--pri),var(--pri2));
+      transition:width .35s ease;
+    }
+    .card{
+      background:var(--card);
+      border-radius:var(--r);
+      padding:22px 20px 24px;
+      box-shadow:0 12px 30px rgba(0,0,0,.12);
+      position:relative;
+    }
+    .badge{
+      position:absolute;
+      top:12px;
+      left:12px;
+      background:var(--pri);
+      color:#fff;
+      font-weight:800;
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:12px;
+    }
+    .question-text{
+      font-size:clamp(18px,2.2vw,24px);
+      line-height:1.5;
+      margin-bottom:14px;
+      padding-left:22px;
+      position:relative;
+    }
+    .question-text::before{
+      content:"C";
+      position:absolute;
+      left:0;
+      top:-6px;
+      font-size:36px;
+      line-height:0;
+      color:var(--pri);
+      opacity:.25;
+    }
+    .answers{
+      display:grid;
+      gap:10px;
+      margin-top:4px;
+    }
+    .answer{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      background:#fff;
+      border-radius:14px;
+      padding:10px 12px;
+      box-shadow:0 6px 16px rgba(0,0,0,.06);
+      cursor:pointer;
+      border:2px solid transparent;
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background-color .12s ease;
+      touch-action:manipulation;
+      position:relative;
+    }
+    .answer:hover{
+      transform:translateY(-1px);
+      box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .answer.disabled{
+      cursor:default;
+      opacity:.96;
+      transform:none;
+      box-shadow:0 6px 16px rgba(0,0,0,.06);
+    }
+    .chip{
+      flex:0 0 30px;
+      height:30px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      background:linear-gradient(135deg,var(--pri),var(--pri2));
+      color:#fff;
+      font-weight:800;
+      font-size:13px;
+    }
+    .answer-text{
+      flex:1;
+      font-size:15px;
+    }
+    .answer.correct-play{
+      background:#d9f7d9;
+      border-color:#2e9b3b;
+    }
+    .answer.wrong-play{
+      background:#ffe1e1;
+      border-color:#d44343;
+    }
+    .answer.correct-config::after{
+      content:"Bonne réponse (config)";
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:11px;
+      font-weight:700;
+      color:#2e7d32;
+      background:#e4f7e4;
+      border-radius:999px;
+      padding:2px 8px;
+    }
+    .feedback{
+      margin-top:12px;
+      font-weight:600;
+      font-size:14px;
+      min-height:18px;
+    }
+    .feedback.ok{color:#2e7d32;}
+    .feedback.ko{color:#c62828;}
+    .hint{
+      margin-top:6px;
+      font-size:11px;
+      color:#555;
+    }
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top:18px;
+    }
+    dialog{
+      border:0;
+      border-radius:14px;
+      max-width:min(92vw,480px);
+      width:100%;
+      padding:0;
+      box-shadow:0 20px 50px rgba(0,0,0,.4);
+    }
+    .dialog-body{
+      padding:18px 18px 18px;
+      text-align:center;
+    }
+    .qr-box{
+      margin:10px auto;
+      padding:10px;
+      background:#fff;
+      border-radius:14px;
+      display:inline-block;
+      box-shadow:0 8px 20px rgba(0,0,0,.12);
+    }
+    .qr-box img{
+      max-width:100%;
+      height:auto;
+      border-radius:10px;
+    }
+    .small-text{
+      font-size:12px;
+      color:#444;
+      margin-top:4px;
+    }
+    .warn-local{
+      margin-top:8px;
+      font-size:11px;
+      color:#a13c00;
+      background:#ffe8d8;
+      padding:6px 10px;
+      border-radius:10px;
+    }
+    .summary{
+      font-size:14px;
+      margin-top:8px;
+      line-height:1.5;
+    }
+    .summary strong{
+      color:#1b5e20;
+    }
+    .sb-entry{
+      padding:3px 0;
+      border-bottom:1px dashed rgba(0,0,0,.08);
+    }
+    .sb-entry:nth-child(1){
+      font-weight:700;
+    }
+    @media (max-width:650px){
+      header{padding:16px;}
+      main{padding:16px;}
+    }
+  </style>
+
+  <!-- Firebase (SDK v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<div class="app" role="application" aria-label="Daara Bordeaux — Quiz Fiqh">
+  <header>
+    <div class="header-top">
+      <div class="title">Daara Bordeaux — Quiz Fiqh</div>
+      <div class="mode-indicator" id="modeIndicator">
+        Mode : <span id="modeLabel">Quiz (joueur)</span>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn primary small" id="btnMode">
+        🔁 Basculer mode (quiz / config)
+      </button>
+      <button class="btn small" id="btn-qr">
+        📱 QR code participants
+      </button>
+      <button class="btn small" id="btn-edit-json">
+        ✎ Modifier JSON complet
+      </button>
+      <button class="btn small" id="btn-export">
+        ⤓ Exporter le quiz
+      </button>
+      <button class="btn small" id="btn-shuffle">
+        🔀 Mélanger les questions
+      </button>
+      <button class="btn small" id="btn-scoreboard">
+        🏆 Tableau des scores
+      </button>
+      <span class="pill">
+        Question <span id="pos">1</span>/<span id="tot">12</span>
+      </span>
+    </div>
+    <div class="warn-local" id="warnLocal" style="display:none;">
+      ⚠️ Tu ouvres ce fichier en local (<code>file:///</code>). Le QR ne pourra pas être scanné par les autres.  
+      Pour un vrai mode Kahoot, mets ce fichier sur un site (HTTPS) ou GitHub Pages, puis rouvre-le.
+    </div>
+  </header>
+
+  <main>
+    <!-- ÉCRAN DE DÉMARRAGE -->
+    <div id="startScreen" style="text-align:center;padding:24px 16px;">
+      <h2 style="color:var(--pri);margin-bottom:10px;font-size:28px;">
+        Daara Bordeaux — Quiz Fiqh
+      </h2>
+      <p style="margin-bottom:14px;">Quand tout le monde est connecté et prêt, clique pour lancer la première question.</p>
+      <button id="startBtn" class="btn primary" style="font-size:18px;padding:12px 22px;margin-top:6px;">
+        🚀 Lancer le quiz
+      </button>
+      <p style="margin-top:10px;font-size:12px;color:#555;">
+        (Les élèves peuvent déjà scanner le QR code, mais les questions ne commencent qu’au démarrage.)
+      </p>
+    </div>
+
+    <!-- CONTENU DU QUIZ (caché au début) -->
+    <div id="quizContainer" style="display:none;">
+      <div class="player-row">
+        <span class="player-label">Nom du participant :</span>
+        <input id="playerName" placeholder="Ex : Groupe 1, Aïcha, Équipe verte…">
+        <span class="score-pill" id="scorePill">Score : 0</span>
+      </div>
+
+      <div class="time-config">
+        <span class="time-config-label">Durée par question :</span>
+        <button class="time-btn" data-seconds="10">10 s</button>
+        <button class="time-btn" data-seconds="20">20 s</button>
+        <button class="time-btn" data-seconds="30">30 s</button>
+        <button class="time-btn" data-seconds="45">45 s</button>
+        <button class="time-btn" data-seconds="60">60 s</button>
+      </div>
+
+      <div class="top-row">
+        <span class="timer-label">Temps restant :</span>
+        <span id="timerValue" class="timer-value">-- s</span>
+      </div>
+      <div class="progress"><div id="prog" class="fill"></div></div>
+      <div id="screen"></div>
+      <div class="controls">
+        <button class="btn" id="prev">← Précédent</button>
+        <button class="btn primary" id="next">Question suivante →</button>
+        <button class="btn small" id="btn-summary">📊 Voir mon score</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Dialog QR -->
+<dialog id="qrDialog">
+  <div class="dialog-body">
+    <h3 style="color:var(--pri);margin-bottom:4px;">QR code participants</h3>
+    <p style="font-size:13px;margin-bottom:8px;" id="qrText">
+      Demande aux élèves de scanner ce QR code avec leur téléphone.<br>
+      Ils ouvriront exactement ce quiz (sur leur propre appareil).
+    </p>
+    <div class="qr-box" id="qrBox">
+      <img id="qrImg" alt="QR code vers ce quiz">
+    </div>
+    <div class="small-text" id="qrSmall">
+      Si le QR ne charge pas, partage simplement le lien de la page.
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn primary small" onclick="document.getElementById('qrDialog').close()">Fermer</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Dialog JSON Editor -->
+<dialog id="editor">
+  <div class="dialog-body" style="text-align:left;">
+    <h3 style="color:var(--pri);margin-bottom:6px;">Modifier le quiz (JSON avancé)</h3>
+    <p style="font-size:12px;margin-bottom:6px;">
+      Tu peux tout modifier ici (questions, réponses, index de la bonne réponse).
+    </p>
+    <pre style="background:#f5f5f7;padding:8px;border-radius:8px;font-size:11px;overflow:auto;margin-bottom:8px;">{
+  "text": "Question…",
+  "answers": ["Réponse 1","Réponse 2"],
+  "correct": 0  ← indice de la bonne réponse (0 = 1ère, 1 = 2ème, etc.)
+}</pre>
+    <textarea id="editorArea" style="width:100%;min-height:220px;border:1px solid #ddd;border-radius:10px;padding:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+      <button class="btn small" onclick="document.getElementById('editor').close()">Annuler</button>
+      <button class="btn primary small" id="saveEd">Enregistrer</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Dialog Summary -->
+<dialog id="summaryDialog">
+  <div class="dialog-body">
+    <h3 style="color:var(--pri);margin-bottom:6px;">📊 Résumé de ton quiz</h3>
+    <div class="summary" id="summaryText"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn small" id="btn-send-score">📡 Envoyer mon score</button>
+      <button class="btn primary small" onclick="document.getElementById('summaryDialog').close()">Fermer</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Dialog Scoreboard -->
+<dialog id="scoreboardDialog">
+  <div class="dialog-body">
+    <h3 style="color:var(--pri);margin-bottom:6px;">🏆 Tableau des scores (automatique)</h3>
+    <p style="font-size:12px;margin-bottom:8px;">
+      Dès que les participants cliquent sur « Envoyer mon score », leurs résultats apparaissent ici.  
+      Le classement et le Top 3 se mettent à jour automatiquement.
+    </p>
+    <div id="sbList" style="font-size:13px;text-align:left;max-height:220px;overflow:auto;margin-bottom:8px;">
+      <em>En attente des scores…</em>
+    </div>
+    <div id="sbTop3" style="font-size:13px;margin-top:6px;text-align:left;"></div>
+    <div style="margin-top:10px;">
+      <button class="btn primary small" onclick="document.getElementById('scoreboardDialog').close()">Fermer</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const LS_KEY = "fiqh-quiz-kahoot-score-v1";
+const LS_PLAYER = "fiqh-quiz-player-name-v1";
+const QUIZ_ID = "daara-bordeaux-fiqh-1";
+
+// 🚀 CONFIG FIREBASE À REMPLACER PAR TES INFOS
+// Va sur https://console.firebase.google.com > ton projet > Paramètres > Config SDK Web
+// et remplace les valeurs ci-dessous.
+const firebaseConfig = {
+  apiKey: "TON_API_KEY_ICI",
+  authDomain: "TON_PROJET.firebaseapp.com",
+  projectId: "TON_PROJET",
+  storageBucket: "TON_PROJET.appspot.com",
+  messagingSenderId: "TON_SENDER_ID",
+  appId: "TON_APP_ID"
+};
+
+// Init Firebase + Firestore
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const scoresCollection = db.collection("quizScores");
+
+// durée par question (sera contrôlée par les boutons)
+let QUESTION_TIME = 20;
+let remaining = QUESTION_TIME;
+let timerId = null;
+
+let defaultQuiz = [
+  {
+    text: "Celui qui a oublié le qunût dans la prière du matin…",
+    answers: [
+      "Sajada ba‘da as-salâm",
+      "Sajada qabla as-salâm",
+      "Ṣalâtuhu ṣaḥîḥa"
+    ],
+    correct: 0
+  },
+  {
+    text: "Quel est le jugement de celui qui a ajouté dans la prière quelque chose équivalent…",
+    answers: [
+      "Ṣaḥḥat ṣalâtuhu",
+      "Baṭulat ṣalâtuhu",
+      "Sajada baʿda as-salâm",
+      "Sajada qabla as-salâm"
+    ],
+    correct: 0
+  },
+  {
+    text: "J’ai récité à voix haute dans la prière de l’ʿAṣr…",
+    answers: [
+      "Sajadtu qabla as-salām",
+      "Sajadtu baʿda as-salām",
+      "Lā sujûda ʿalayhi",
+      "Ṣalātī ṣaḥîḥa"
+    ],
+    correct: 0
+  },
+  {
+    text: "La prosternation de l’oubli dans la prière a lieu lorsqu’on délaisse…",
+    answers: [
+      "Thalātha sunan",
+      "Sunnah wāḥidah",
+      "Sunnatayn",
+      "Arba‘a sunan"
+    ],
+    correct: 0
+  },
+  {
+    text: "J’étais en prière et j’ai entendu la mention du Prophète Muḥammad (ﷺ), alors j’ai prononcé la prière sur lui…",
+    answers: [
+      "Sajadtu baʿda as-salām",
+      "Kuriḥat wa-lākin ṣaḥîḥat ṣalātī",
+      "Baṭulat ṣalātī",
+      "Lā sujûda ʿalayya"
+    ],
+    correct: 0
+  },
+  {
+    text: "Quel est le jugement de celui qui s’est levé pour la deuxième rakʿa puis s’en est souvenu avant que son corps ne quitte le sol…",
+    answers: [
+      "Yarjiʿu ilā al-julūs",
+      "Yasjudu baʿda as-salām",
+      "Lā yasjudu"
+    ],
+    correct: 0
+  },
+  {
+    text: "Celui qui a oublié la prosternation avant le salut jusqu’à ce qu’il soit sorti de la mosquée…",
+    answers: [
+      "Fa-ṣalātuhu ṣaḥîḥa",
+      "Baṭulat ṣalātuhu",
+      "Aʿāda aṣ-ṣalāh"
+    ],
+    correct: 0
+  },
+  {
+    text: "Celui qui a oublié de réciter la sourate ou un verset après la Fātiḥa…",
+    answers: [
+      "Sajada baʿda as-salām",
+      "Sajada qabla as-salām"
+    ],
+    correct: 0
+  },
+  {
+    text: "Celui qui écoute quelqu’un parler un petit moment, sa prière est annulée…",
+    answers: [
+      "Ṣaḥīḥ",
+      "Khaṭa’"
+    ],
+    correct: 0
+  },
+  {
+    text: "Quel est le jugement de celui qui s’est assoupi pendant la prière…",
+    answers: [
+      "Ṣalâtuhu ṣaḥîḥa",
+      "Yasjudu qabla as-salām"
+    ],
+    correct: 0
+  },
+  {
+    text: "Celui qui doute d’un état d’impureté ou de souillure sans être certain qu’un événement impur l’a touché…",
+    answers: [
+      "Aʿāda aṣ-ṣalāh wa-l-wuḍū’ maʿan",
+      "Ṣalâtuhu ṣaḥîḥa"
+    ],
+    correct: 0
+  },
+  {
+    text: "Et s’il est certain qu’il est en état de pureté…",
+    answers: [
+      "Fa-ṣalātuhu ṣaḥîḥa wa-lā shay’a ʿalayhi",
+      "Aʿāda aṣ-ṣalāh wa-l-wuḍū’ maʿan"
+    ],
+    correct: 0
+  }
+];
+
+let stored = null;
+try{
+  const raw = localStorage.getItem(LS_KEY);
+  if(raw){ stored = JSON.parse(raw); }
+}catch(e){ stored = null; }
+
+let quiz = Array.isArray(stored) ? stored : defaultQuiz.slice();
+
+let idx = 0;
+let mode = "play";
+let score = 0;
+let answeredState = {};
+
+const screen = document.getElementById("screen");
+const posEl = document.getElementById("pos");
+const totEl = document.getElementById("tot");
+const prog = document.getElementById("prog");
+const btnPrev = document.getElementById("prev");
+const btnNext = document.getElementById("next");
+const btnMode = document.getElementById("btnMode");
+const modeIndicator = document.getElementById("modeIndicator");
+const modeLabel = document.getElementById("modeLabel");
+const btnQr = document.getElementById("btn-qr");
+const qrDialog = document.getElementById("qrDialog");
+const qrImg = document.getElementById("qrImg");
+const qrText = document.getElementById("qrText");
+const qrSmall = document.getElementById("qrSmall");
+const qrBox = document.getElementById("qrBox");
+const editorDialog = document.getElementById("editor");
+const editorArea = document.getElementById("editorArea");
+const btnEditJson = document.getElementById("btn-edit-json");
+const btnExport = document.getElementById("btn-export");
+const warnLocal = document.getElementById("warnLocal");
+const scorePill = document.getElementById("scorePill");
+const playerNameInput = document.getElementById("playerName");
+const btnSummary = document.getElementById("btn-summary");
+const summaryDialog = document.getElementById("summaryDialog");
+const summaryText = document.getElementById("summaryText");
+const btnSendScore = document.getElementById("btn-send-score");
+const timerValue = document.getElementById("timerValue");
+const timeButtons = document.querySelectorAll(".time-btn");
+
+// start screen
+const startScreen = document.getElementById("startScreen");
+const quizContainer = document.getElementById("quizContainer");
+const startBtn = document.getElementById("startBtn");
+
+// Scoreboard
+const btnScoreboard = document.getElementById("btn-scoreboard");
+const scoreboardDialog = document.getElementById("scoreboardDialog");
+const sbList = document.getElementById("sbList");
+const sbTop3 = document.getElementById("sbTop3");
+let scoreboard = [];
+let unsubscribeScores = null;
+
+totEl.textContent = quiz.length;
+
+try{
+  const storedName = localStorage.getItem(LS_PLAYER);
+  if(storedName){
+    playerNameInput.value = storedName;
+  }
+}catch(e){}
+
+function saveQuiz(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(quiz));
+  }catch(e){}
+}
+function updateScorePill(){
+  scorePill.textContent = "Score : " + score;
+}
+playerNameInput.addEventListener("change", ()=>{
+  try{
+    localStorage.setItem(LS_PLAYER, playerNameInput.value.trim());
+  }catch(e){}
+});
+
+// Timer
+function updateTimerDisplay(){
+  timerValue.textContent = remaining + " s";
+  if(remaining === 0){
+    timerValue.style.color = "#b71c1c";
+    timerValue.textContent = "Temps écoulé";
+  }else if(remaining <= 5){
+    timerValue.style.color = "#e65100";
+  }else{
+    timerValue.style.color = "#1b5e20";
+  }
+}
+function startTimer(){
+  clearInterval(timerId);
+  remaining = QUESTION_TIME;
+  updateTimerDisplay();
+  timerId = setInterval(()=>{
+    remaining--;
+    if(remaining <= 0){
+      remaining = 0;
+      clearInterval(timerId);
+      updateTimerDisplay();
+      if(mode === "play" && !answeredState[idx]){
+        answeredState[idx] = { selected: null, correct: false, timeout: true };
+        if(idx < quiz.length - 1){
+          idx++;
+          render();
+        }
+      }
+    }else{
+      updateTimerDisplay();
+    }
+  }, 1000);
+}
+
+// durée par question via boutons
+function setQuestionTime(seconds){
+  QUESTION_TIME = seconds;
+  timeButtons.forEach(btn=>{
+    const val = parseInt(btn.dataset.seconds, 10);
+    btn.classList.toggle("active", val === seconds);
+  });
+  if(mode === "play" && !answeredState[idx]){
+    clearInterval(timerId);
+    remaining = QUESTION_TIME;
+    updateTimerDisplay();
+    startTimer();
+  }
+}
+
+timeButtons.forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const secs = parseInt(btn.dataset.seconds, 10);
+    setQuestionTime(secs);
+  });
+});
+
+function updateModeUI(){
+  if(mode === "play"){
+    modeLabel.textContent = "Quiz (joueur)";
+    modeIndicator.classList.remove("mode-edit");
+  }else{
+    modeLabel.textContent = "Configuration (enseignant)";
+    modeIndicator.classList.add("mode-edit");
+  }
+  render();
+}
+
+function render(){
+  if(!quiz.length){
+    screen.innerHTML = "<p>Aucune question définie.</p>";
+    return;
+  }
+  const q = quiz[idx];
+  posEl.textContent = idx + 1;
+  totEl.textContent = quiz.length;
+  prog.style.width = ((idx+1)/quiz.length*100) + "%";
+
+  const answersHtml = q.answers.map((a,i)=>`
+    <div class="answer" data-index="${i}">
+      <div class="chip">${i+1}</div>
+      <div class="answer-text">${a}</div>
+    </div>
+  `).join("");
+
+  screen.innerHTML = `
+    <section class="card">
+      <span class="badge">#${idx+1}</span>
+      <div class="question-text">${q.text}</div>
+      <div class="answers">
+        ${answersHtml}
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <div class="hint" id="hint"></div>
+    </section>
+  `;
+
+  const answersEls = screen.querySelectorAll(".answer");
+  const feedback = document.getElementById("feedback");
+  const hint = document.getElementById("hint");
+
+  btnPrev.disabled = (idx === 0);
+  btnNext.textContent = (idx === quiz.length-1) ? "Dernière question" : "Question suivante →";
+
+  const state = answeredState[idx];
+
+  if(mode === "config"){
+    hint.textContent = "Tape sur la bonne réponse pour l'enregistrer. Elle sera affichée en vert en mode quiz.";
+    feedback.textContent = "";
+    clearInterval(timerId);
+    timerValue.textContent = "-- s";
+    timerValue.style.color = "#333";
+    answersEls.forEach((el,i)=>{
+      el.classList.remove("disabled","correct-play","wrong-play","correct-config");
+      if(i === q.correct){
+        el.classList.add("correct-config");
+      }
+      el.onclick = ()=>{
+        q.correct = i;
+        saveQuiz();
+        render();
+      };
+    });
+  }else{
+    hint.textContent = "Choisis ta réponse. Une seule tentative par question 😉";
+
+    if(state){
+      answersEls.forEach((el,i)=>{
+        el.classList.add("disabled");
+        if(i === q.correct){
+          el.classList.add("correct-play");
+        }
+        if(state.selected !== null && i === state.selected && !state.correct){
+          el.classList.add("wrong-play");
+        }
+      });
+      clearInterval(timerId);
+      if(state.timeout){
+        const bonne = q.answers[q.correct] ?? "";
+        feedback.textContent = "⏰ Temps écoulé. Bonne réponse : " + bonne;
+        feedback.className = "feedback ko";
+        timerValue.style.color = "#b71c1c";
+        timerValue.textContent = "Temps écoulé";
+      }else if(state.correct){
+        feedback.textContent = "✅ Bonne réponse (déjà enregistrée).";
+        feedback.className = "feedback ok";
+        timerValue.style.color = "#333";
+        timerValue.textContent = "Réponse donnée";
+      }else{
+        const bonne = q.answers[q.correct] ?? "";
+        feedback.textContent = "❌ Mauvaise réponse (déjà enregistrée). Bonne réponse : " + bonne;
+        feedback.className = "feedback ko";
+        timerValue.style.color = "#333";
+        timerValue.textContent = "Réponse donnée";
+      }
+    }else{
+      answersEls.forEach((el,i)=>{
+        el.onclick = ()=>handleAnswerClick(i);
+      });
+      startTimer();
+    }
+  }
+}
+
+function handleAnswerClick(i){
+  if(mode !== "play") return;
+  if(answeredState[idx]) return;
+
+  const q = quiz[idx];
+  const answersEls = screen.querySelectorAll(".answer");
+  const feedback = document.getElementById("feedback");
+
+  const correct = (i === q.correct);
+  answeredState[idx] = { selected: i, correct, timeout: false };
+
+  if(correct){
+    score++;
+    updateScorePill();
+  }
+
+  clearInterval(timerId);
+  timerValue.style.color = correct ? "#1b5e20" : "#b71c1c";
+
+  answersEls.forEach((el, idxAns)=>{
+    el.classList.add("disabled");
+    if(idxAns === q.correct){
+      el.classList.add("correct-play");
+    }
+    if(idxAns === i && !correct){
+      el.classList.add("wrong-play");
+    }
+  });
+
+  if(correct){
+    feedback.textContent = "✅ Bonne réponse !";
+    feedback.className = "feedback ok";
+  }else{
+    const bonne = q.answers[q.correct] ?? "";
+    feedback.textContent = "❌ Mauvaise réponse. Bonne réponse : " + bonne;
+    feedback.className = "feedback ko";
+  }
+}
+
+// Navigation
+btnNext.addEventListener("click", ()=>{
+  if(idx < quiz.length-1){
+    idx++;
+    render();
+  }
+});
+btnPrev.addEventListener("click", ()=>{
+  if(idx > 0){
+    idx--;
+    render();
+  }
+});
+
+// Mode toggle
+btnMode.addEventListener("click", ()=>{
+  mode = (mode === "play") ? "config" : "play";
+  updateModeUI();
+});
+
+// Mélanger
+document.getElementById("btn-shuffle").addEventListener("click", ()=>{
+  for(let k = quiz.length-1; k>0; k--){
+    const r = Math.floor(Math.random()*(k+1));
+    [quiz[k], quiz[r]] = [quiz[r], quiz[k]];
+  }
+  idx = 0;
+  answeredState = {};
+  score = 0;
+  updateScorePill();
+  clearInterval(timerId);
+  render();
+});
+
+// QR code dialog
+btnQr.addEventListener("click", ()=>{
+  if(window.location.protocol === "file:"){
+    qrBox.style.display = "none";
+    qrText.textContent = "Pour utiliser le QR code comme Kahoot, ce quiz doit être en ligne (adresse HTTPS ou GitHub Pages).";
+    qrSmall.textContent = "Actuellement, le fichier est ouvert directement depuis ton appareil (file:///).";
+  }else{
+    const url = window.location.href;
+    const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=" + encodeURIComponent(url);
+    qrImg.src = qrUrl;
+    qrBox.style.display = "inline-block";
+    qrText.textContent = "Demande aux élèves de scanner ce QR code avec leur téléphone.";
+    qrSmall.textContent = "Ils ouvriront exactement cette page de quiz sur leur propre appareil.";
+  }
+  qrDialog.showModal();
+});
+
+// JSON editor
+btnEditJson.addEventListener("click", ()=>{
+  editorArea.value = JSON.stringify(quiz, null, 2);
+  editorDialog.showModal();
+});
+
+document.getElementById("saveEd").addEventListener("click", ()=>{
+  try{
+    const data = JSON.parse(editorArea.value);
+    if(!Array.isArray(data)) throw new Error("Le JSON doit être un tableau de questions.");
+    quiz = data;
+    idx = 0;
+    answeredState = {};
+    score = 0;
+    updateScorePill();
+    saveQuiz();
+    editorDialog.close();
+    clearInterval(timerId);
+    render();
+  }catch(err){
+    alert("Erreur JSON : " + err.message);
+  }
+});
+
+// Export JSON
+btnExport.addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(quiz, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "quiz-fiqh-kahoot-score.json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Résumé / score
+btnSummary.addEventListener("click", ()=>{
+  const name = playerNameInput.value.trim() || "Participant";
+  const totalQuestions = quiz.length;
+  const answeredCount = Object.keys(answeredState).length;
+  summaryText.innerHTML = `
+    <p><strong>${name}</strong></p>
+    <p>Tu as répondu à <strong>${answeredCount}</strong> question(s) sur ${totalQuestions}.</p>
+    <p>Score : <strong>${score}</strong> bonne(s) réponse(s).</p>
+    <p style="margin-top:6px;font-size:12px;">
+      Quand tu es prêt, clique sur « Envoyer mon score ». L'enseignant verra ton résultat dans le tableau général.
+    </p>
+  `;
+  summaryDialog.showModal();
+});
+
+// Envoi du score vers Firestore (comme Kahoot)
+btnSendScore.addEventListener("click", async ()=>{
+  const name = playerNameInput.value.trim() || "Participant";
+  const totalQuestions = quiz.length;
+
+  try{
+    await scoresCollection.add({
+      quizId: QUIZ_ID,
+      name,
+      score,
+      totalQuestions,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert("✅ Score envoyé !");
+  }catch(e){
+    alert("Erreur lors de l'envoi du score : " + e.message);
+  }
+});
+
+// Scoreboard automatique (écoute en temps réel)
+btnScoreboard.addEventListener("click", ()=>{
+  scoreboardDialog.showModal();
+  sbList.innerHTML = "<em>Chargement des scores…</em>";
+  sbTop3.innerHTML = "";
+
+  if(unsubscribeScores){
+    unsubscribeScores();
+  }
+
+  unsubscribeScores = scoresCollection
+    .where("quizId", "==", QUIZ_ID)
+    .orderBy("score", "desc")
+    .orderBy("createdAt", "asc")
+    .onSnapshot((snapshot)=>{
+      scoreboard = snapshot.docs.map(doc => doc.data());
+      renderScoreboard();
+    }, (err)=>{
+      sbList.innerHTML = "Erreur lors du chargement des scores : " + err.message;
+      sbTop3.innerHTML = "";
+    });
+});
+
+scoreboardDialog.addEventListener("close", ()=>{
+  if(unsubscribeScores){
+    unsubscribeScores();
+    unsubscribeScores = null;
+  }
+});
+
+function renderScoreboard(){
+  if(!scoreboard.length){
+    sbList.innerHTML = "<em>Aucun score encore envoyé.</em>";
+    sbTop3.innerHTML = "";
+    return;
+  }
+  sbList.innerHTML = scoreboard.map((p,index)=>`
+    <div class="sb-entry">
+      <strong>${index+1}.</strong> ${p.name} — ${p.score} pts
+    </div>
+  `).join("");
+
+  const top3 = scoreboard.slice(0,3);
+  sbTop3.innerHTML = `
+    <h4 style="margin:6px 0 4px;">🥇 Top 3</h4>
+    <ol style="padding-left:18px;margin:0;">
+      ${top3.map(p=>`<li><strong>${p.name}</strong> — ${p.score} pts</li>`).join("")}
+    </ol>
+  `;
+}
+
+// Raccourcis clavier
+document.addEventListener("keydown", (e)=>{
+  if(e.key === "ArrowRight") btnNext.click();
+  if(e.key === "ArrowLeft") btnPrev.click();
+});
+
+// Start screen : lancer le quiz
+startBtn.addEventListener("click", ()=>{
+  startScreen.style.display = "none";
+  quizContainer.style.display = "block";
+
+  idx = 0;
+  answeredState = {};
+  score = 0;
+  updateScorePill();
+  setQuestionTime(20); // 20s par défaut au démarrage
+  updateModeUI();      // affiche la première question & lance le timer
+});
+
+// Init
+if(window.location.protocol === "file:"){
+  warnLocal.style.display = "block";
+}else{
+  warnLocal.style.display = "none";
+}
+updateScorePill();
+// NE PAS appeler render/chrono avant le clic sur "Lancer le quiz"
+</script>
+
+</body>
+</html>
