@@ -1086,16 +1086,16 @@ btnScoreboard.addEventListener("click", ()=>{
   }
 
   unsubscribeScores = scoresCollection
-    .where("quizId", "==", QUIZ_ID)
-    .orderBy("score", "desc")
-    .orderBy("createdAt", "asc")
-    .onSnapshot((snapshot)=>{
-      scoreboard = snapshot.docs.map(doc => doc.data());
-      renderScoreboard();
-    }, (err)=>{
-      sbList.innerHTML = "Erreur lors du chargement des scores : " + err.message;
-      sbTop3.innerHTML = "";
-    });
+  .where("quizId", "==", QUIZ_ID)
+  .orderBy("score", "desc")   // on ne trie plus sur createdAt
+  .onSnapshot((snapshot)=>{
+    scoreboard = snapshot.docs.map(doc => doc.data());
+    renderScoreboard();
+  }, (err)=>{
+    sbList.innerHTML = "Erreur lors du chargement des scores : " + err.message;
+    sbTop3.innerHTML = "";
+  });
+
 });
 
 scoreboardDialog.addEventListener("close", ()=>{
