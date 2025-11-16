@@ -994,7 +994,6 @@ function handleAnswerClick(i){
 
 // 🔄 synchronisation de la question courante via Firestore
 async function syncQuestionChange(){
-  // NE FAIS PLUS render() ici
   if(isHost){
     try{
       await controlDoc.set({
@@ -1008,6 +1007,7 @@ async function syncQuestionChange(){
     }
   }
 }
+
 
 
 // Navigation
@@ -1202,40 +1202,40 @@ btnResetScores.addEventListener("click", async ()=>{
 // 🔊 écoute de l’état global (start + question courante + durée)
 function listenControl(){
   controlUnsub = controlDoc.onSnapshot(doc=>{
-    if(!doc.exists){
-      controlState = null;
-      return;
-    }
-    controlState = doc.data();
+    if(!doc.exists) return;
 
-    // 1) start / stop
-    if(controlState.started){
+    const data = doc.data();
+
+    if(data.started){
       startScreen.style.display = "none";
       quizContainer.style.display = "block";
 
-      const qIndex = typeof controlState.current === "number" ? controlState.current : 0;
+      const newIndex = data.current ?? 0;
 
-      // 🔴 On force TOUT LE MONDE (animateur + élèves) à suivre Firestore
-      if(qIndex >= 0 && qIndex < quiz.length){
-        idx = qIndex;
-        // Optionnel : on peut vider l'état de réponse à chaque changement
-        // answeredState = {};
+      // 🔴 On ne change de question QUE si l’indice est différent
+      if(newIndex !== idx){
+        idx = newIndex;
+
+        // On réinitialise le timer
+        clearInterval(timerId);
+        answeredState[idx] = null;
+
         render();
       }
+
     } else {
-      // Quiz arrêté → tout le monde reste sur l’écran d’attente
-      clearInterval(timerId);
       quizContainer.style.display = "none";
       startScreen.style.display = "block";
+      clearInterval(timerId);
     }
 
-    // 2) synchronisation de la durée
-    if(typeof controlState.questionTime === "number" &&
-       controlState.questionTime !== QUESTION_TIME){
-      setQuestionTime(controlState.questionTime, true);
+    // synchronisation durée
+    if(data.questionTime && data.questionTime !== QUESTION_TIME){
+      setQuestionTime(data.questionTime, true);
     }
   });
 }
+
 listenControl();
 
 // animateur toggle
