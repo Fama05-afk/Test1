@@ -422,8 +422,7 @@
       <button class="btn small" id="btn-shuffle">
         🔀 Mélanger les questions
       </button>
-
-       <button class="btn small" id="btn-scoreboard">
+      <button class="btn small" id="btn-scoreboard">
         🏆 Tableau des scores
       </button>
       <button class="btn small" id="btn-reset-quiz">
@@ -432,7 +431,6 @@
       <button class="btn small" id="btn-reset-scores">
         ♻️ Réinitialiser les scores
       </button>
-
       <span class="pill">
         Question <span id="pos">1</span>/<span id="tot">12</span>
       </span>
@@ -467,7 +465,7 @@
       </div>
 
       <div class="time-config">
-        <span class="time-config-label">Durée par question :</span>
+        <span class="time-config-label">Durée par question (affichée seulement chez l’animateur) :</span>
         <button class="time-btn" data-seconds="10">10 s</button>
         <button class="time-btn" data-seconds="20">20 s</button>
         <button class="time-btn" data-seconds="30">30 s</button>
@@ -476,8 +474,8 @@
       </div>
 
       <div class="top-row">
-        <span class="timer-label">Temps restant :</span>
-        <span id="timerValue" class="timer-value">-- s</span>
+        <span class="timer-label">Temps restant (animateur seulement) :</span>
+        <span id="timerValue" class="timer-value">--</span>
       </div>
       <div class="progress"><div id="prog" class="fill"></div></div>
       <div id="screen"></div>
@@ -490,8 +488,7 @@
   </main>
 </div>
 
-<!-- Dialogs (QR, JSON, Résumé, Scoreboard) identiques à avant -->
-
+<!-- Dialogs (QR, JSON, Résumé, Scoreboard) -->
 <dialog id="qrDialog">
   <div class="dialog-body">
     <h3 style="color:var(--pri);margin-bottom:4px;">QR code participants</h3>
@@ -559,6 +556,7 @@
 </dialog>
 
 <script>
+// ================== CONSTANTES / FIREBASE ==================
 const LS_KEY = "fiqh-quiz-kahoot-score-v1";
 const LS_PLAYER = "fiqh-quiz-player-name-v1";
 const QUIZ_ID = "daara-bordeaux-fiqh-1";
@@ -573,13 +571,12 @@ const firebaseConfig = {
   measurementId: "G-3W7NY3K59H"
 };
 
-// Init Firebase + Firestore
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const scoresCollection = db.collection("quizScores");
 const controlDoc = db.collection("quizControl").doc(QUIZ_ID);
 
-// durée par question
+// ================== ÉTAT GLOBAL ==================
 let QUESTION_TIME = 20;
 let remaining = QUESTION_TIME;
 let timerId = null;
@@ -592,7 +589,7 @@ let defaultQuiz = [
       "Sajada qabla as-salâm",
       "Ṣalâtuhu ṣaḥîḥa"
     ],
-    correct: 2
+    correct: 0
   },
   {
     text: "Quel est le jugement de celui qui a ajouté dans la prière quelque chose équivalent…",
@@ -602,7 +599,7 @@ let defaultQuiz = [
       "Sajada baʿda as-salâm",
       "Sajada qabla as-salâm"
     ],
-    correct: 1
+    correct: 0
   },
   {
     text: "J’ai récité à voix haute dans la prière de l’ʿAṣr…",
@@ -612,7 +609,7 @@ let defaultQuiz = [
       "Lā sujûda ʿalayhi",
       "Ṣalātī ṣaḥîḥa"
     ],
-    correct: 1
+    correct: 0
   },
   {
     text: "La prosternation de l’oubli dans la prière a lieu lorsqu’on délaisse…",
@@ -622,7 +619,7 @@ let defaultQuiz = [
       "Sunnatayn",
       "Arba‘a sunan"
     ],
-    correct: 2
+    correct: 0
   },
   {
     text: "J’étais en prière et j’ai entendu la mention du Prophète Muḥammad (ﷺ), alors j’ai prononcé la prière sur lui…",
@@ -632,7 +629,7 @@ let defaultQuiz = [
       "Baṭulat ṣalātī",
       "Lā sujûda ʿalayya"
     ],
-    correct: 3
+    correct: 0
   },
   {
     text: "Quel est le jugement de celui qui s’est levé pour la deuxième rakʿa puis s’en est souvenu avant que son corps ne quitte le sol…",
@@ -650,7 +647,7 @@ let defaultQuiz = [
       "Baṭulat ṣalātuhu",
       "Aʿāda aṣ-ṣalāh"
     ],
-    correct: 2
+    correct: 0
   },
   {
     text: "Celui qui a oublié de réciter la sourate ou un verset après la Fātiḥa…",
@@ -658,7 +655,7 @@ let defaultQuiz = [
       "Sajada baʿda as-salām",
       "Sajada qabla as-salām"
     ],
-    correct: 1
+    correct: 0
   },
   {
     text: "Celui qui écoute quelqu’un parler un petit moment, sa prière est annulée…",
@@ -666,7 +663,7 @@ let defaultQuiz = [
       "Ṣaḥīḥ",
       "Khaṭa’"
     ],
-    correct: 1
+    correct: 0
   },
   {
     text: "Quel est le jugement de celui qui s’est assoupi pendant la prière…",
@@ -694,9 +691,6 @@ let defaultQuiz = [
   }
 ];
 
-// ⛔ Garde ici toutes les questions que tu avais, je ne les réécris pas pour éviter un message trop long.
-// Tu peux simplement recopier ton tableau `defaultQuiz` d'origine à la place du commentaire ci-dessus.
-
 let stored = null;
 try{
   const raw = localStorage.getItem(LS_KEY);
@@ -705,17 +699,17 @@ try{
 
 let quiz = Array.isArray(stored) ? stored : defaultQuiz.slice();
 
-let idx = 0;
-let mode = "play";
-let score = 0;
-let answeredState = {};
+let idx = 0;              // index de la question courante (toujours mis à jour par Firestore)
+let mode = "play";        // "play" ou "config"
+let score = 0;            // score du participant local
+let answeredState = {};   // réponses du participant local (par index de question)
 let scoreboard = [];
 let unsubscribeScores = null;
 let controlUnsub = null;
-let controlState = null;
+let controlState = null;  // dernier état Firestore (quizControl)
 let isHost = false;
 
-// DOM
+// ================== DOM ==================
 const screen = document.getElementById("screen");
 const posEl = document.getElementById("pos");
 const totEl = document.getElementById("tot");
@@ -747,35 +741,7 @@ const timeButtons = document.querySelectorAll(".time-btn");
 const startScreen = document.getElementById("startScreen");
 const quizContainer = document.getElementById("quizContainer");
 const startBtn = document.getElementById("startBtn");
-
-
-// Bouton reset complet du quiz (local)
 const btnResetQuiz = document.getElementById("btn-reset-quiz");
-
-function resetLocalQuiz(){
-  idx = 0;
-  score = 0;
-  answeredState = {};
-  updateScorePill();
-  clearInterval(timerId);
-
-  // Remet la durée d'affichage
-  remaining = QUESTION_TIME;
-  timerValue.textContent = "-- s";
-  timerValue.style.color = "#333";
-
-  // Retour à l'écran de démarrage
-  quizContainer.style.display = "none";
-  startScreen.style.display = "block";
-}
-
-btnResetQuiz.addEventListener("click", ()=>{
-  if(confirm("Voulez-vous vraiment réinitialiser le quiz ?")){
-    resetLocalQuiz();
-    alert("Quiz réinitialisé ✔️");
-  }
-});
-
 const btnScoreboard = document.getElementById("btn-scoreboard");
 const scoreboardDialog = document.getElementById("scoreboardDialog");
 const sbList = document.getElementById("sbList");
@@ -806,10 +772,17 @@ playerNameInput.addEventListener("change", ()=>{
   }catch(e){}
 });
 
-// TIMER
+// ================== TIMER (HOST ONLY) ==================
+function stopTimer(){
+  clearInterval(timerId);
+  timerId = null;
+  timerValue.textContent = "--";
+  timerValue.style.color = "#333";
+}
+
 function updateTimerDisplay(){
   timerValue.textContent = remaining + " s";
-  if(remaining === 0){
+  if(remaining <= 0){
     timerValue.style.color = "#b71c1c";
     timerValue.textContent = "Temps écoulé";
   }else if(remaining <= 5){
@@ -818,7 +791,14 @@ function updateTimerDisplay(){
     timerValue.style.color = "#1b5e20";
   }
 }
+
 function startTimer(){
+  // Timer seulement chez l’animateur en mode quiz / started
+  if(!isHost || !controlState || !controlState.started || mode !== "play"){
+    timerValue.textContent = "—";
+    timerValue.style.color = "#333";
+    return;
+  }
   clearInterval(timerId);
   remaining = QUESTION_TIME;
   updateTimerDisplay();
@@ -828,40 +808,48 @@ function startTimer(){
       remaining = 0;
       clearInterval(timerId);
       updateTimerDisplay();
-      if(mode === "play" && !answeredState[idx]){
-        answeredState[idx] = { selected: null, correct: false, timeout: true };
-        if(idx < quiz.length - 1 && isHost){
-          idx++;
-          syncQuestionChange();
-        }
-      }
+      // On affiche juste "Temps écoulé" côté animateur, pas d’auto-next
     }else{
       updateTimerDisplay();
     }
   }, 1000);
 }
 
-function setQuestionTime(seconds){
+// durée par question (contrôlée par l’animateur, mais visible que chez lui)
+function setQuestionTime(seconds, fromRemote = false){
   QUESTION_TIME = seconds;
   timeButtons.forEach(btn=>{
     const val = parseInt(btn.dataset.seconds, 10);
     btn.classList.toggle("active", val === seconds);
   });
-  if(mode === "play" && !answeredState[idx]){
-    clearInterval(timerId);
-    remaining = QUESTION_TIME;
-    updateTimerDisplay();
+
+  // Si le changement vient de l’animateur, on enregistre dans Firestore
+  if(!fromRemote && isHost){
+    controlDoc.set({
+      quizId: QUIZ_ID,
+      questionTime: seconds,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(err=>{
+      console.error("Erreur maj durée:", err);
+    });
+  }
+
+  // On relance le timer chez l’animateur si on est en quiz sur une question non répondue
+  if(isHost && mode === "play" && controlState && controlState.started && !answeredState[idx]){
     startTimer();
   }
 }
+
+// Seul l’animateur peut cliquer sur les boutons de durée
 timeButtons.forEach(btn=>{
   btn.addEventListener("click", ()=>{
+    if(!isHost) return;
     const secs = parseInt(btn.dataset.seconds, 10);
     setQuestionTime(secs);
   });
 });
 
-// MODE
+// ================== MODE (CONFIG / QUIZ) ==================
 function updateModeUI(){
   if(mode === "play"){
     modeLabel.textContent = "Quiz (joueur)";
@@ -873,11 +861,15 @@ function updateModeUI(){
   render();
 }
 
+// ================== RENDER QUESTION ==================
 function render(){
   if(!quiz.length){
     screen.innerHTML = "<p>Aucune question définie.</p>";
     return;
   }
+  if(idx < 0) idx = 0;
+  if(idx >= quiz.length) idx = quiz.length - 1;
+
   const q = quiz[idx];
   posEl.textContent = idx + 1;
   totEl.textContent = quiz.length;
@@ -915,9 +907,10 @@ function render(){
   if(mode === "config"){
     hint.textContent = "Tape sur la bonne réponse pour l'enregistrer. Elle sera affichée en vert en mode quiz.";
     feedback.textContent = "";
-    clearInterval(timerId);
-    timerValue.textContent = "-- s";
+    stopTimer();
+    timerValue.textContent = "--";
     timerValue.style.color = "#333";
+
     answersEls.forEach((el,i)=>{
       el.classList.remove("disabled","correct-play","wrong-play","correct-config");
       if(i === q.correct){
@@ -929,43 +922,45 @@ function render(){
         render();
       };
     });
-  }else{
+
+  }else{ // mode play
     hint.textContent = "Choisis ta réponse. Une seule tentative par question 😉";
 
-    if(state){
+    if(state){  // question déjà répondue par ce participant
       answersEls.forEach((el,i)=>{
         el.classList.add("disabled");
         if(i === q.correct){
           el.classList.add("correct-play");
         }
-        if(state.selected !== null && i === state.selected && !state.correct){
+        if(i === state.selected && !state.correct){
           el.classList.add("wrong-play");
         }
       });
-      clearInterval(timerId);
-      if(state.timeout){
-        const bonne = q.answers[q.correct] ?? "";
-        feedback.textContent = "⏰ Temps écoulé. Bonne réponse : " + bonne;
-        feedback.className = "feedback ko";
-        timerValue.style.color = "#b71c1c";
-        timerValue.textContent = "Temps écoulé";
-      }else if(state.correct){
+      stopTimer();
+      timerValue.textContent = "Réponse donnée";
+      timerValue.style.color = "#333";
+
+      if(state.correct){
         feedback.textContent = "✅ Bonne réponse (déjà enregistrée).";
         feedback.className = "feedback ok";
-        timerValue.style.color = "#333";
-        timerValue.textContent = "Réponse donnée";
       }else{
         const bonne = q.answers[q.correct] ?? "";
         feedback.textContent = "❌ Mauvaise réponse (déjà enregistrée). Bonne réponse : " + bonne;
         feedback.className = "feedback ko";
-        timerValue.style.color = "#333";
-        timerValue.textContent = "Réponse donnée";
       }
-    }else{
+
+    }else{ // pas encore répondu
       answersEls.forEach((el,i)=>{
         el.onclick = ()=>handleAnswerClick(i);
       });
-      startTimer();
+
+      // Timer uniquement pour l’animateur
+      if(isHost && controlState && controlState.started){
+        startTimer();
+      }else{
+        stopTimer();
+        timerValue.textContent = "—";
+      }
     }
   }
 }
@@ -979,14 +974,15 @@ function handleAnswerClick(i){
   const feedback = document.getElementById("feedback");
 
   const correct = (i === q.correct);
-  answeredState[idx] = { selected: i, correct, timeout: false };
+  answeredState[idx] = { selected: i, correct };
 
   if(correct){
     score++;
     updateScorePill();
   }
 
-  clearInterval(timerId);
+  stopTimer();
+  timerValue.textContent = "Réponse donnée";
   timerValue.style.color = correct ? "#1b5e20" : "#b71c1c";
 
   answersEls.forEach((el, idxAns)=>{
@@ -1009,37 +1005,36 @@ function handleAnswerClick(i){
   }
 }
 
-// 🔄 synchronisation de la question courante via Firestore
-async function syncQuestionChange(){
-  render();
-  if(isHost){
-    try{
-      await controlDoc.set({
-        quizId: QUIZ_ID,
-        started: true,
-        current: idx,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:true });
-    }catch(e){
-      console.error("Erreur sync question:", e);
-    }
+// ================== SYNCHRO FIRESTORE (SOURCE UNIQUE) ==================
+
+// L’animateur NE modifie PAS idx localement. Il envoie juste current dans Firestore.
+// Tous les appareils (y compris l’animateur) suivent controlDoc via onSnapshot.
+
+async function goToQuestion(newIndex){
+  if(!isHost) return;
+  if(newIndex < 0 || newIndex >= quiz.length) return;
+  try{
+    await controlDoc.set({
+      quizId: QUIZ_ID,
+      started: true,
+      current: newIndex,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+  }catch(e){
+    console.error("Erreur goToQuestion:", e);
   }
 }
 
-// Navigation
+// Navigation boutons
 btnNext.addEventListener("click", ()=>{
-  if(!isHost) return;
-  if(idx < quiz.length-1){
-    idx++;
-    syncQuestionChange();
-  }
+  if(!isHost || !controlState) return;
+  const current = typeof controlState.current === "number" ? controlState.current : 0;
+  goToQuestion(current + 1);
 });
 btnPrev.addEventListener("click", ()=>{
-  if(!isHost) return;
-  if(idx > 0){
-    idx--;
-    syncQuestionChange();
-  }
+  if(!isHost || !controlState) return;
+  const current = typeof controlState.current === "number" ? controlState.current : 0;
+  goToQuestion(current - 1);
 });
 
 // Mode toggle
@@ -1058,7 +1053,7 @@ document.getElementById("btn-shuffle").addEventListener("click", ()=>{
   answeredState = {};
   score = 0;
   updateScorePill();
-  clearInterval(timerId);
+  stopTimer();
   render();
 });
 
@@ -1095,7 +1090,7 @@ document.getElementById("saveEd").addEventListener("click", ()=>{
     updateScorePill();
     saveQuiz();
     editorDialog.close();
-    clearInterval(timerId);
+    stopTimer();
     render();
   }catch(err){
     alert("Erreur JSON : " + err.message);
@@ -1169,12 +1164,14 @@ btnScoreboard.addEventListener("click", ()=>{
       sbTop3.innerHTML = "";
     });
 });
+
 scoreboardDialog.addEventListener("close", ()=>{
   if(unsubscribeScores){
     unsubscribeScores();
     unsubscribeScores = null;
   }
 });
+
 function renderScoreboard(){
   if(!scoreboard.length){
     sbList.innerHTML = "<em>Aucun score encore envoyé.</em>";
@@ -1196,7 +1193,7 @@ function renderScoreboard(){
   `;
 }
 
-// ♻️ Reset scores
+// Reset scores Firestore
 btnResetScores.addEventListener("click", async ()=>{
   if(!confirm("Réinitialiser tous les scores de ce quiz ?")) return;
   try{
@@ -1214,24 +1211,38 @@ btnResetScores.addEventListener("click", async ()=>{
   }
 });
 
-// 🔊 écoute de l’état global (start + question courante)
+// 🔊 écoute de l’état global (start + question courant + durée)
 function listenControl(){
   controlUnsub = controlDoc.onSnapshot(doc=>{
     if(!doc.exists){
       controlState = null;
+      // État initial : écran de démarrage
+      startScreen.style.display = "block";
+      quizContainer.style.display = "none";
+      stopTimer();
       return;
     }
-    controlState = doc.data();
-    if(controlState.started){
-      // tout le monde entre dans le quiz
+    const data = doc.data();
+    controlState = data;
+
+    if(data.started){
       startScreen.style.display = "none";
       quizContainer.style.display = "block";
 
-      const qIndex = typeof controlState.current === "number" ? controlState.current : 0;
-      if(qIndex >=0 && qIndex < quiz.length && qIndex !== idx){
-        idx = qIndex;
+      const newIndex = typeof data.current === "number" ? data.current : 0;
+      if(newIndex !== idx){
+        idx = newIndex;
         render();
       }
+    }else{
+      quizContainer.style.display = "none";
+      startScreen.style.display = "block";
+      stopTimer();
+    }
+
+    if(typeof data.questionTime === "number" &&
+       data.questionTime !== QUESTION_TIME){
+      setQuestionTime(data.questionTime, true);
     }
   });
 }
@@ -1240,6 +1251,11 @@ listenControl();
 // animateur toggle
 hostCheckbox.addEventListener("change", ()=>{
   isHost = hostCheckbox.checked;
+  // Quand on change d’état animateur / joueur, on met à jour l’affichage du timer
+  if(!isHost){
+    stopTimer();
+    timerValue.textContent = "—";
+  }
   render();
 });
 
@@ -1249,29 +1265,60 @@ document.addEventListener("keydown", (e)=>{
   if(e.key === "ArrowLeft" && isHost) btnPrev.click();
 });
 
-// Démarrage du quiz
-startBtn.addEventListener("click", async ()=>{
-  startScreen.style.display = "none";
-  quizContainer.style.display = "block";
+// Réinitialiser complètement le quiz (local + Firestore si animateur)
+btnResetQuiz.addEventListener("click", async ()=>{
+  if(!confirm("Voulez-vous vraiment réinitialiser le quiz ?")) return;
 
+  // reset local
   idx = 0;
-  answeredState = {};
   score = 0;
+  answeredState = {};
   updateScorePill();
-  setQuestionTime(20);
-  updateModeUI();
+  stopTimer();
+  quizContainer.style.display = "none";
+  startScreen.style.display = "block";
 
+  // reset global si animateur
   if(isHost){
     try{
       await controlDoc.set({
         quizId: QUIZ_ID,
-        started: true,
-        current: idx,
+        started: false,
+        current: 0,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge:true });
     }catch(e){
-      console.error("Erreur start control:", e);
+      console.error("Erreur reset control:", e);
     }
+  }
+
+  alert("Quiz réinitialisé ✔️");
+});
+
+// Démarrage du quiz
+startBtn.addEventListener("click", async ()=>{
+  // Si ce n'est PAS l'animateur → on attend
+  if(!isHost){
+    alert("En attente de l'animateur pour démarrer le quiz.");
+    return;
+  }
+
+  // Réinit côté animateur
+  score = 0;
+  answeredState = {};
+  updateScorePill();
+
+  // État global Firestore : start + question 0
+  try{
+    await controlDoc.set({
+      quizId: QUIZ_ID,
+      started: true,
+      current: 0,
+      questionTime: QUESTION_TIME,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
+  }catch(e){
+    console.error("Erreur start control:", e);
   }
 });
 
@@ -1282,6 +1329,7 @@ if(window.location.protocol === "file:"){
   warnLocal.style.display = "none";
 }
 updateScorePill();
+updateModeUI();
 </script>
 
 </body>
