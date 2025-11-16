@@ -797,10 +797,14 @@ function startTimer(){
       updateTimerDisplay();
       if(mode === "play" && !answeredState[idx]){
         answeredState[idx] = { selected: null, correct: false, timeout: true };
-        if(idx < quiz.length - 1 && isHost){
-          idx++;
-          syncQuestionChange();
+
+        
+
+        // À la fin du timer → seulement afficher "temps écoulé"
+        if(idx < quiz.length - 1){
+          // Rien → on attend que l'animateur clique "Suivant"
         }
+
       }
     }else{
       updateTimerDisplay();
