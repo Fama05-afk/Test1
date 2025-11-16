@@ -994,7 +994,7 @@ function handleAnswerClick(i){
 
 // 🔄 synchronisation de la question courante via Firestore
 async function syncQuestionChange(){
-  render();
+  // NE FAIS PLUS render() ici
   if(isHost){
     try{
       await controlDoc.set({
@@ -1008,6 +1008,7 @@ async function syncQuestionChange(){
     }
   }
 }
+
 
 // Navigation
 btnNext.addEventListener("click", ()=>{
@@ -1207,26 +1208,28 @@ function listenControl(){
     }
     controlState = doc.data();
 
-    // 1) Gestion start/stop du quiz
+    // 1) start / stop
     if(controlState.started){
-      // Tout le monde va dans le quiz
       startScreen.style.display = "none";
       quizContainer.style.display = "block";
 
       const qIndex = typeof controlState.current === "number" ? controlState.current : 0;
-      if(qIndex >= 0 && qIndex < quiz.length && qIndex !== idx){
+
+      // 🔴 On force TOUT LE MONDE (animateur + élèves) à suivre Firestore
+      if(qIndex >= 0 && qIndex < quiz.length){
         idx = qIndex;
-        answeredState = {};
+        // Optionnel : on peut vider l'état de réponse à chaque changement
+        // answeredState = {};
         render();
       }
     } else {
-      // Quiz non démarré → tout le monde reste sur l'écran d'attente
+      // Quiz arrêté → tout le monde reste sur l’écran d’attente
       clearInterval(timerId);
       quizContainer.style.display = "none";
       startScreen.style.display = "block";
     }
 
-    // 2) Synchronisation de la durée
+    // 2) synchronisation de la durée
     if(typeof controlState.questionTime === "number" &&
        controlState.questionTime !== QUESTION_TIME){
       setQuestionTime(controlState.questionTime, true);
