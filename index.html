@@ -422,45 +422,24 @@
       <button class="btn small" id="btn-shuffle">
         🔀 Mélanger les questions
       </button>
-      <button class="btn small" id="btn-scoreboard">
+
+       <button class="btn small" id="btn-scoreboard">
         🏆 Tableau des scores
       </button>
       <button class="btn small" id="btn-reset-quiz">
-  🔄 Réinitialiser le quiz
+        🔄 Réinitialiser le quiz
       </button>
-
       <button class="btn small" id="btn-reset-scores">
         ♻️ Réinitialiser les scores
       </button>
 
-
-      // Bouton reset complet du quiz
-      const btnResetQuiz = document.getElementById("btn-reset-quiz");
-      
-      function resetLocalQuiz(){
-        idx = 0;
-        score = 0;
-        answeredState = {};
-        updateScorePill();
-        clearInterval(timerId);
-      
-        // Remet la durée de base
-        remaining = QUESTION_TIME;
-        timerValue.textContent = "-- s";
-      
-        // Retour à l'écran de démarrage
-        quizContainer.style.display = "none";
-        startScreen.style.display = "block";
-      }
-      
-      btnResetQuiz.addEventListener("click", ()=>{
-        if(confirm("Voulez-vous vraiment réinitialiser le quiz pour tout le monde ?")){
-          resetLocalQuiz();
-          alert("Quiz réinitialisé ✔️");
-        }
-      });
-
       <span class="pill">
+        Question <span id="pos">1</span>/<span id="tot">12</span>
+      </span>
+
+
+      
+     
         Question <span id="pos">1</span>/<span id="tot">12</span>
       </span>
     </div>
@@ -774,6 +753,35 @@ const timeButtons = document.querySelectorAll(".time-btn");
 const startScreen = document.getElementById("startScreen");
 const quizContainer = document.getElementById("quizContainer");
 const startBtn = document.getElementById("startBtn");
+
+
+// Bouton reset complet du quiz (local)
+const btnResetQuiz = document.getElementById("btn-reset-quiz");
+
+function resetLocalQuiz(){
+  idx = 0;
+  score = 0;
+  answeredState = {};
+  updateScorePill();
+  clearInterval(timerId);
+
+  // Remet la durée d'affichage
+  remaining = QUESTION_TIME;
+  timerValue.textContent = "-- s";
+  timerValue.style.color = "#333";
+
+  // Retour à l'écran de démarrage
+  quizContainer.style.display = "none";
+  startScreen.style.display = "block";
+}
+
+btnResetQuiz.addEventListener("click", ()=>{
+  if(confirm("Voulez-vous vraiment réinitialiser le quiz ?")){
+    resetLocalQuiz();
+    alert("Quiz réinitialisé ✔️");
+  }
+});
+
 const btnScoreboard = document.getElementById("btn-scoreboard");
 const scoreboardDialog = document.getElementById("scoreboardDialog");
 const sbList = document.getElementById("sbList");
