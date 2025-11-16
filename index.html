@@ -422,7 +422,8 @@
       <button class="btn small" id="btn-shuffle">
         🔀 Mélanger les questions
       </button>
-      <button class="btn small" id="btn-scoreboard">
+
+       <button class="btn small" id="btn-scoreboard">
         🏆 Tableau des scores
       </button>
       <button class="btn small" id="btn-reset-quiz">
@@ -431,6 +432,7 @@
       <button class="btn small" id="btn-reset-scores">
         ♻️ Réinitialiser les scores
       </button>
+
       <span class="pill">
         Question <span id="pos">1</span>/<span id="tot">12</span>
       </span>
@@ -488,7 +490,8 @@
   </main>
 </div>
 
-<!-- Dialogs (QR, JSON, Résumé, Scoreboard) -->
+<!-- Dialogs (QR, JSON, Résumé, Scoreboard) identiques à avant -->
+
 <dialog id="qrDialog">
   <div class="dialog-body">
     <h3 style="color:var(--pri);margin-bottom:4px;">QR code participants</h3>
@@ -691,6 +694,9 @@ let defaultQuiz = [
   }
 ];
 
+// ⛔ Garde ici toutes les questions que tu avais, je ne les réécris pas pour éviter un message trop long.
+// Tu peux simplement recopier ton tableau `defaultQuiz` d'origine à la place du commentaire ci-dessus.
+
 let stored = null;
 try{
   const raw = localStorage.getItem(LS_KEY);
@@ -741,7 +747,35 @@ const timeButtons = document.querySelectorAll(".time-btn");
 const startScreen = document.getElementById("startScreen");
 const quizContainer = document.getElementById("quizContainer");
 const startBtn = document.getElementById("startBtn");
+
+
+// Bouton reset complet du quiz (local)
 const btnResetQuiz = document.getElementById("btn-reset-quiz");
+
+function resetLocalQuiz(){
+  idx = 0;
+  score = 0;
+  answeredState = {};
+  updateScorePill();
+  clearInterval(timerId);
+
+  // Remet la durée d'affichage
+  remaining = QUESTION_TIME;
+  timerValue.textContent = "-- s";
+  timerValue.style.color = "#333";
+
+  // Retour à l'écran de démarrage
+  quizContainer.style.display = "none";
+  startScreen.style.display = "block";
+}
+
+btnResetQuiz.addEventListener("click", ()=>{
+  if(confirm("Voulez-vous vraiment réinitialiser le quiz ?")){
+    resetLocalQuiz();
+    alert("Quiz réinitialisé ✔️");
+  }
+});
+
 const btnScoreboard = document.getElementById("btn-scoreboard");
 const scoreboardDialog = document.getElementById("scoreboardDialog");
 const sbList = document.getElementById("sbList");
@@ -784,7 +818,6 @@ function updateTimerDisplay(){
     timerValue.style.color = "#1b5e20";
   }
 }
-
 function startTimer(){
   clearInterval(timerId);
   remaining = QUESTION_TIME;
@@ -797,14 +830,10 @@ function startTimer(){
       updateTimerDisplay();
       if(mode === "play" && !answeredState[idx]){
         answeredState[idx] = { selected: null, correct: false, timeout: true };
-
-        
-
-        // À la fin du timer → seulement afficher "temps écoulé"
-        if(idx < quiz.length - 1){
-          // Rien → on attend que l'animateur clique "Suivant"
+        if(idx < quiz.length - 1 && isHost){
+          idx++;
+          syncQuestionChange();
         }
-
       }
     }else{
       updateTimerDisplay();
@@ -812,25 +841,12 @@ function startTimer(){
   }, 1000);
 }
 
-// durée par question (contrôlée par l’animateur)
-function setQuestionTime(seconds, fromRemote = false){
+function setQuestionTime(seconds){
   QUESTION_TIME = seconds;
   timeButtons.forEach(btn=>{
     const val = parseInt(btn.dataset.seconds, 10);
     btn.classList.toggle("active", val === seconds);
   });
-
-  // Si le changement vient de l’animateur, on pousse dans Firestore
-  if(!fromRemote && isHost){
-    controlDoc.set({
-      quizId: QUIZ_ID,
-      questionTime: seconds,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true }).catch(err=>{
-      console.error("Erreur maj durée:", err);
-    });
-  }
-
   if(mode === "play" && !answeredState[idx]){
     clearInterval(timerId);
     remaining = QUESTION_TIME;
@@ -838,11 +854,8 @@ function setQuestionTime(seconds, fromRemote = false){
     startTimer();
   }
 }
-
-// Seul l’animateur peut cliquer sur les boutons de durée
 timeButtons.forEach(btn=>{
   btn.addEventListener("click", ()=>{
-    if(!isHost) return;
     const secs = parseInt(btn.dataset.seconds, 10);
     setQuestionTime(secs);
   });
@@ -998,6 +1011,7 @@ function handleAnswerClick(i){
 
 // 🔄 synchronisation de la question courante via Firestore
 async function syncQuestionChange(){
+  render();
   if(isHost){
     try{
       await controlDoc.set({
@@ -1011,8 +1025,6 @@ async function syncQuestionChange(){
     }
   }
 }
-
-
 
 // Navigation
 btnNext.addEventListener("click", ()=>{
@@ -1163,7 +1175,6 @@ scoreboardDialog.addEventListener("close", ()=>{
     unsubscribeScores = null;
   }
 });
-
 function renderScoreboard(){
   if(!scoreboard.length){
     sbList.innerHTML = "<em>Aucun score encore envoyé.</em>";
@@ -1185,7 +1196,7 @@ function renderScoreboard(){
   `;
 }
 
-// ♻️ Reset scores (Firestore)
+// ♻️ Reset scores
 btnResetScores.addEventListener("click", async ()=>{
   if(!confirm("Réinitialiser tous les scores de ce quiz ?")) return;
   try{
@@ -1203,43 +1214,27 @@ btnResetScores.addEventListener("click", async ()=>{
   }
 });
 
-// 🔊 écoute de l’état global (start + question courante + durée)
+// 🔊 écoute de l’état global (start + question courante)
 function listenControl(){
   controlUnsub = controlDoc.onSnapshot(doc=>{
-    if(!doc.exists) return;
-
-    const data = doc.data();
-
-    if(data.started){
+    if(!doc.exists){
+      controlState = null;
+      return;
+    }
+    controlState = doc.data();
+    if(controlState.started){
+      // tout le monde entre dans le quiz
       startScreen.style.display = "none";
       quizContainer.style.display = "block";
 
-      const newIndex = data.current ?? 0;
-
-      // 🔴 On ne change de question QUE si l’indice est différent
-      if(newIndex !== idx){
-        idx = newIndex;
-
-        // On réinitialise le timer
-        clearInterval(timerId);
-        answeredState[idx] = null;
-
+      const qIndex = typeof controlState.current === "number" ? controlState.current : 0;
+      if(qIndex >=0 && qIndex < quiz.length && qIndex !== idx){
+        idx = qIndex;
         render();
       }
-
-    } else {
-      quizContainer.style.display = "none";
-      startScreen.style.display = "block";
-      clearInterval(timerId);
-    }
-
-    // synchronisation durée
-    if(data.questionTime && data.questionTime !== QUESTION_TIME){
-      setQuestionTime(data.questionTime, true);
     }
   });
 }
-
 listenControl();
 
 // animateur toggle
@@ -1254,48 +1249,8 @@ document.addEventListener("keydown", (e)=>{
   if(e.key === "ArrowLeft" && isHost) btnPrev.click();
 });
 
-// Réinitialiser complètement le quiz (local + Firestore si animateur)
-btnResetQuiz.addEventListener("click", async ()=>{
-  if(!confirm("Voulez-vous vraiment réinitialiser le quiz ?")) return;
-
-  // reset local
-  idx = 0;
-  score = 0;
-  answeredState = {};
-  updateScorePill();
-  clearInterval(timerId);
-  remaining = QUESTION_TIME;
-  timerValue.textContent = "-- s";
-  timerValue.style.color = "#333";
-  quizContainer.style.display = "none";
-  startScreen.style.display = "block";
-
-  // reset global si animateur
-  if(isHost){
-    try{
-      await controlDoc.set({
-        quizId: QUIZ_ID,
-        started: false,
-        current: 0,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:true });
-    }catch(e){
-      console.error("Erreur reset control:", e);
-    }
-  }
-
-  alert("Quiz réinitialisé ✔️");
-});
-
 // Démarrage du quiz
 startBtn.addEventListener("click", async ()=>{
-  // Si ce n'est PAS l'animateur → on attend
-  if(!isHost){
-    alert("En attente de l'animateur pour démarrer le quiz.");
-    return;
-  }
-
-  // Ici, c'est l'animateur : on démarre pour lui
   startScreen.style.display = "none";
   quizContainer.style.display = "block";
 
@@ -1303,19 +1258,20 @@ startBtn.addEventListener("click", async ()=>{
   answeredState = {};
   score = 0;
   updateScorePill();
-  setQuestionTime(20);   // durée par défaut
+  setQuestionTime(20);
   updateModeUI();
 
-  // Et on informe Firestore pour que tous les autres suivent
-  try{
-    await controlDoc.set({
-      quizId: QUIZ_ID,
-      started: true,
-      current: idx,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge:true });
-  }catch(e){
-    console.error("Erreur start control:", e);
+  if(isHost){
+    try{
+      await controlDoc.set({
+        quizId: QUIZ_ID,
+        started: true,
+        current: idx,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge:true });
+    }catch(e){
+      console.error("Erreur start control:", e);
+    }
   }
 });
 
